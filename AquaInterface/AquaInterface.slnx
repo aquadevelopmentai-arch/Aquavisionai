@@ -4,5 +4,5 @@
     <Platform Name="x86" />
   </Configurations>
   <Project Path="AquaInterface/AquaInterface.vcxproj" />
-  <Project Path="BaslerCamIF/BaslerCamIF.vcxproj" />
+  <Project Path="BaslerCamIF/BaslerCamIF.vcxproj" Id="41a562be-0561-4b9a-a64c-9112cbcfccd1" />
 </Solution>

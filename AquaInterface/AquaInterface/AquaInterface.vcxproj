@@ -220,7 +220,10 @@
     <None Include="res\AquaInterface.rc2" />
   </ItemGroup>
   <ItemGroup>
+    <Image Include="res\app_icon.ico" />
+    <Image Include="res\app_icon_1024.png" />
     <Image Include="res\AquaInterface.ico" />
+    <Image Include="res\icon1.ico" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
