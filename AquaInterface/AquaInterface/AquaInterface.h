@@ -23,8 +23,10 @@ public:
 // 재정의입니다.
 public:
 	virtual BOOL InitInstance();
-
+	virtual int  ExitInstance();
 // 구현입니다.
+protected:
+	ULONG_PTR m_gdiplusToken = 0;
 
 	DECLARE_MESSAGE_MAP()
 };
