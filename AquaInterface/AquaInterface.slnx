@@ -5,4 +5,5 @@
   </Configurations>
   <Project Path="AquaInterface/AquaInterface.vcxproj" />
   <Project Path="BaslerCamIF/BaslerCamIF.vcxproj" Id="41a562be-0561-4b9a-a64c-9112cbcfccd1" />
+  <Project Path="process/process.vcxproj" Id="faa15aee-d121-418b-8792-f497d2d2faae" />
 </Solution>

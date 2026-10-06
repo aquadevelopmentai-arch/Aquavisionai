@@ -26,47 +26,61 @@
 struct BaslerCamData;
 struct SaveItem;
 namespace Pylon { class CGrabResultPtr; class CPylonImage; }
-namespace cv    { class Mat; }
+namespace cv { class Mat; }
 
 // ------------------------------------------------------------
 // Settings
 // ------------------------------------------------------------
 struct LineScanConfig
 {
-    int    height         = 256;      // lines per chunk
-    double lineRateHz     = 10000.0;  // internal line rate (used when useEncoder == false)
-    double exposureUs     = 50.0;     // must be shorter than 1 / lineRate
-    bool   useEncoder     = false;    // true: LineStart from encoder / external signal
+    int    height = 128;      // lines per chunk
+    double lineRateHz = 10000.0;  // internal line rate (used when useEncoder == false)
+    double exposureUs = 50.0;     // must be shorter than 1 / lineRate
+    bool   useEncoder = false;    // true: LineStart from encoder / external signal
     char   lineSource[32] = "Line1";  // TriggerSource when useEncoder == true
-    int    maxBuffers     = 300;      // driver buffer count
+    int    maxBuffers = 100;      // driver buffer count
 };
 
 enum SaveMode
 {
-    SaveMode_Off       = 0,   // no saving
-    SaveMode_All       = 1,   // save every N-th chunk
+    SaveMode_Off = 0,   // no saving
+    SaveMode_All = 1,   // save every N-th chunk
     SaveMode_Requested = 2    // save only when the callback returns true (e.g. NG only)
 };
 
 enum SaveFormat
 {
-    SaveFormat_Bmp  = 0,      // fastest (no compression)
-    SaveFormat_Png  = 1,
+    SaveFormat_Bmp = 0,      // fastest (no compression)
+    SaveFormat_Png = 1,
     SaveFormat_Tiff = 2
 };
 
 struct SaveConfig
 {
-    int  mode        = SaveMode_Off;
-    int  format      = SaveFormat_Bmp;
-    int  everyN      = 1;                 // SaveMode_All only
-    int  maxQueue    = 30;                // pending images (holds driver buffers!)
+    int  mode = SaveMode_Off;
+    int  format = SaveFormat_Bmp;
+    int  everyN = 1;                 // SaveMode_All only
+    int  maxQueue = 30;                // pending images (holds driver buffers!)
     char folder[260] = "C:\\AquaImages";  // use an ASCII path
 };
 
 // ------------------------------------------------------------
 // Data passed to the callback
 // ------------------------------------------------------------
+// Pixel format of FrameChunk::data (raw camera buffer, no conversion)
+enum ChunkPixelFormat
+{
+    ChunkPix_Unknown = 0,
+    ChunkPix_Mono8 = 1,    // CV_8UC1
+    ChunkPix_Mono16 = 2,    // CV_16UC1 (Mono10/12/16 unpacked)
+    ChunkPix_BGR8 = 3,    // CV_8UC3
+    ChunkPix_RGB8 = 4,    // CV_8UC3 (needs RGB->BGR for OpenCV)
+    ChunkPix_BayerRG8 = 5,    // CV_8UC1 raw Bayer -> needs debayer
+    ChunkPix_BayerGB8 = 6,
+    ChunkPix_BayerGR8 = 7,
+    ChunkPix_BayerBG8 = 8
+};
+
 struct FrameChunk
 {
     const std::uint8_t* data;         // valid ONLY inside the callback
@@ -74,6 +88,7 @@ struct FrameChunk
     int                 height;
     int                 stride;       // bytes per line
     int                 bytesPerPixel;
+    int                 pixelFormat;  // ChunkPixelFormat
     std::uint64_t       frameIndex;   // receive order (from 0)
     std::uint64_t       blockId;      // camera frame id (for drop check)
     std::uint64_t       timestamp;    // camera timestamp (ticks)
@@ -133,5 +148,3 @@ private:
 private:
     BaslerCamData* m_p;   // created in constructor, deleted in destructor
 };
-
-

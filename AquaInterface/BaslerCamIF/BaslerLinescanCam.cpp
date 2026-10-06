@@ -31,8 +31,8 @@ bool CBaslerLineScan::Open(const char* serialNumber)
 
     try
     {
-        Pylon::CTlFactory&   factory = Pylon::CTlFactory::GetInstance();
-        Pylon::IPylonDevice* dev     = nullptr;
+        Pylon::CTlFactory& factory = Pylon::CTlFactory::GetInstance();
+        Pylon::IPylonDevice* dev = nullptr;
 
         if (serialNumber != nullptr && serialNumber[0] != '\0')
         {
@@ -102,8 +102,8 @@ bool CBaslerLineScan::Configure(const LineScanConfig& cfg)
 
         // All frame-level triggers OFF -> continuous acquisition
         SetTrigger("AcquisitionStart", false);   // old racer
-        SetTrigger("FrameBurstStart",  false);
-        SetTrigger("FrameStart",       false);
+        SetTrigger("FrameBurstStart", false);
+        SetTrigger("FrameStart", false);
 
         // Line-level trigger
         if (cfg.useEncoder)
@@ -128,7 +128,7 @@ bool CBaslerLineScan::Configure(const LineScanConfig& cfg)
         }
 
         m_p->camera.MaxNumBuffer = cfg.maxBuffers;
-        m_p->maxBuffers          = cfg.maxBuffers;
+        m_p->maxBuffers = cfg.maxBuffers;
         return true;
     }
     catch (const Pylon::GenericException& e)
@@ -142,7 +142,7 @@ bool CBaslerLineScan::SetSaveConfig(const SaveConfig& cfg)
 {
     SaveConfig c = cfg;
     c.folder[sizeof(c.folder) - 1] = '\0';
-    if (c.everyN   < 1) c.everyN   = 1;
+    if (c.everyN < 1) c.everyN = 1;
     if (c.maxQueue < 1) c.maxQueue = 1;
 
     if (c.mode != SaveMode_Off)
@@ -189,16 +189,16 @@ bool CBaslerLineScan::Start(FrameCallback cb, void* user)
     ::GetLocalTime(&st);
     char tag[32];
     sprintf_s(tag, sizeof(tag), "%04d%02d%02d_%02d%02d%02d",
-              st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond);
+        st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond);
     m_p->sessionTag = tag;
 
     try
     {
-        m_p->cb       = cb;
-        m_p->user     = user;
-        m_p->frames   = 0;
-        m_p->lost     = 0;
-        m_p->saved    = 0;
+        m_p->cb = cb;
+        m_p->user = user;
+        m_p->frames = 0;
+        m_p->lost = 0;
+        m_p->saved = 0;
         m_p->saveDrop = 0;
         m_p->haveLast = false;
 
@@ -295,12 +295,12 @@ void CBaslerLineScan::GrabLoop()
             if (m_p->haveLast && bid > m_p->lastBlock + 1)
                 m_p->lost += bid - m_p->lastBlock - 1;
             m_p->lastBlock = bid;
-            m_p->haveLast  = true;
+            m_p->haveLast = true;
         }
 
         std::unique_ptr<ProcItem> item(new ProcItem());
         item->result = r;
-        item->index  = m_p->frames++;
+        item->index = m_p->frames++;
         m_p->procQ.push_unique(std::move(item));
     }
 }
@@ -322,14 +322,28 @@ void CBaslerLineScan::ProcLoop()
         r->GetStride(stride);
 
         FrameChunk c = {};
-        c.data          = static_cast<const std::uint8_t*>(r->GetBuffer());
-        c.width         = static_cast<int>(r->GetWidth());
-        c.height        = static_cast<int>(r->GetHeight());
-        c.stride        = static_cast<int>(stride);
+        c.data = static_cast<const std::uint8_t*>(r->GetBuffer());
+        c.width = static_cast<int>(r->GetWidth());
+        c.height = static_cast<int>(r->GetHeight());
+        c.stride = static_cast<int>(stride);
         c.bytesPerPixel = static_cast<int>((Pylon::BitPerPixel(r->GetPixelType()) + 7) / 8);
-        c.frameIndex    = item->index;
-        c.blockId       = r->GetBlockID();
-        c.timestamp     = r->GetTimeStamp();
+        switch (r->GetPixelType())
+        {
+        case Pylon::PixelType_Mono8:      c.pixelFormat = ChunkPix_Mono8;    break;
+        case Pylon::PixelType_Mono10:
+        case Pylon::PixelType_Mono12:
+        case Pylon::PixelType_Mono16:     c.pixelFormat = ChunkPix_Mono16;   break;
+        case Pylon::PixelType_BGR8packed: c.pixelFormat = ChunkPix_BGR8;     break;
+        case Pylon::PixelType_RGB8packed: c.pixelFormat = ChunkPix_RGB8;     break;
+        case Pylon::PixelType_BayerRG8:   c.pixelFormat = ChunkPix_BayerRG8; break;
+        case Pylon::PixelType_BayerGB8:   c.pixelFormat = ChunkPix_BayerGB8; break;
+        case Pylon::PixelType_BayerGR8:   c.pixelFormat = ChunkPix_BayerGR8; break;
+        case Pylon::PixelType_BayerBG8:   c.pixelFormat = ChunkPix_BayerBG8; break;
+        default:                          c.pixelFormat = ChunkPix_Unknown;  break;
+        }
+        c.frameIndex = item->index;
+        c.blockId = r->GetBlockID();
+        c.timestamp = r->GetTimeStamp();
 
         // 1) classification (user callback)
         bool wantSave = false;
@@ -346,10 +360,10 @@ void CBaslerLineScan::ProcLoop()
         }
 
         // 2) hand over to save thread (pointer only, no copy)
-        const SaveConfig sc     = GetSaveConfigCopy();
+        const SaveConfig sc = GetSaveConfigCopy();
         const int        everyN = (sc.everyN < 1) ? 1 : sc.everyN;
-        const bool       doSave = (sc.mode == SaveMode_All       && (item->index % everyN) == 0) ||
-                                  (sc.mode == SaveMode_Requested && wantSave);
+        const bool       doSave = (sc.mode == SaveMode_All && (item->index % everyN) == 0) ||
+            (sc.mode == SaveMode_Requested && wantSave);
         if (doSave)
             EnqueueSave(r, item->index, sc);
 
@@ -374,7 +388,7 @@ void CBaslerLineScan::EnqueueSave(const Pylon::CGrabResultPtr& r, std::uint64_t 
 
     std::unique_ptr<SaveItem> item(new SaveItem());
     item->result = r;           // ref-count +1, no image copy
-    item->index  = index;
+    item->index = index;
     m_p->saveQ.push_unique(std::move(item));
 }
 
@@ -460,7 +474,7 @@ void CBaslerLineScan::WriteItem(const SaveItem& item)
 {
     const SaveConfig sc = GetSaveConfigCopy();
 
-    const char*      ext = "bmp";
+    const char* ext = "bmp";
     std::vector<int> params;
     if (sc.format == SaveFormat_Png)
     {
@@ -476,8 +490,8 @@ void CBaslerLineScan::WriteItem(const SaveItem& item)
 
     char path[512];
     sprintf_s(path, sizeof(path), "%s\\%s_%010llu.%s",
-              sc.folder, m_p->sessionTag.c_str(),
-              static_cast<unsigned long long>(item.index), ext);
+        sc.folder, m_p->sessionTag.c_str(),
+        static_cast<unsigned long long>(item.index), ext);
 
     cv::Mat            mat;
     Pylon::CPylonImage tmp;             // used only when a format conversion is needed
