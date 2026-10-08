@@ -5,7 +5,7 @@
 #include "pch.h"
 #include "framework.h"
 #include "AquaInterface.h"
-#include "aquamain.h"
+#include "aquamainDlg.h"
 
 
 #include <gdiplus.h>                          
