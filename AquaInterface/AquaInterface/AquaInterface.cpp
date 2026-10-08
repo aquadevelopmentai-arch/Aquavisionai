@@ -5,7 +5,8 @@
 #include "pch.h"
 #include "framework.h"
 #include "AquaInterface.h"
-#include "AquaInterfaceDlg.h"
+#include "aquamain.h"
+
 
 #include <gdiplus.h>                          
 #pragma comment(lib, "gdiplus.lib") 
@@ -66,7 +67,7 @@ BOOL CAquaInterfaceApp::InitInstance()
 
 	SetRegistryKey(_T("로컬 애플리케이션 마법사에서 생성된 애플리케이션"));
 
-	CAquaInterfaceDlg dlg;
+	Caquamain dlg;
 	m_pMainWnd = &dlg;
 	INT_PTR nResponse = dlg.DoModal();
 	if (nResponse == IDOK)

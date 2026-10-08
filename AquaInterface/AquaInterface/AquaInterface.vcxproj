@@ -197,6 +197,8 @@
   <ItemGroup>
     <ClInclude Include="AquaInterface.h" />
     <ClInclude Include="AquaInterfaceDlg.h" />
+    <ClInclude Include="aquamain.h" />
+    <ClInclude Include="countingDlg.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="LedCtrl.h" />
     <ClInclude Include="pch.h" />
@@ -208,6 +210,8 @@
   <ItemGroup>
     <ClCompile Include="AquaInterface.cpp" />
     <ClCompile Include="AquaInterfaceDlg.cpp" />
+    <ClCompile Include="aquamain.cpp" />
+    <ClCompile Include="countingDlg.cpp" />
     <ClCompile Include="LedCtrl.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
