@@ -100,4 +100,5 @@ public:
 	afx_msg void OnBnClickedEnd();
 	afx_msg void OnLvnItemchangedList1(NMHDR* pNMHDR, LRESULT* pResult);
 	afx_msg void OnBnClickedButtonSettingfile();
+	afx_msg void OnStnClickedStFrames();
 };

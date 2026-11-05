@@ -2,6 +2,7 @@
 #include "afxdialogex.h"
 #include "AquaInterfaceDlg.h"
 #include "countingDlg.h"
+#include "processer.h"
 
 // Caquamain 대화 상자
 
@@ -27,6 +28,9 @@ private:
 	CTabCtrl m_aqua_tab_control;
 	CAquaInterfaceDlg* m_pAquaDlg;
 	CcountingDlg* m_pCountingDlg;
+
+	Cprocesser* m_pProcess;
+
 public:
 	virtual BOOL DestroyWindow();
 	virtual BOOL OnInitDialog();

@@ -16,7 +16,7 @@ Caquamain::Caquamain(CWnd* pParent /*=nullptr*/)
 {
 	m_pAquaDlg = NULL;
 	m_pCountingDlg = NULL;
-
+	m_pProcess = NULL;
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 }
 
@@ -63,6 +63,21 @@ BOOL Caquamain::OnInitDialog()
 	SetIcon(m_hIcon, TRUE);			// 큰 아이콘을 설정합니다.
 	SetIcon(m_hIcon, FALSE);		// 작은 아이콘을 설정합니다.
 
+	if (m_pProcess == NULL)
+	{
+		m_pProcess = new Cprocesser();
+		if (m_pProcess->InitYoloseg())
+		{
+			std::cout << "[Process] Yoloseg initialized successfully" << std::endl;
+		}
+		else
+		{
+			AfxMessageBox(_T("처리기 초기화 실패"));
+			delete m_pProcess;
+			m_pProcess = NULL;
+		}
+	}
+	m_pCountingDlg->SetProcesser(m_pProcess);
 	return TRUE;  // return TRUE unless you set the focus to a control
 	// 예외: OCX 속성 페이지는 FALSE를 반환해야 합니다.
 }
@@ -89,7 +104,7 @@ void Caquamain::OnTcnSelchangeTab1(NMHDR* pNMHDR, LRESULT* pResult)
 BOOL Caquamain::DestroyWindow()
 {
 	m_pAquaDlg->OnDestroy();
-	//m_pCountingDlg->DestroyWindow();
+	//m_pCountingDlg->OnDestroy();
 
 	delete m_pAquaDlg;
 	m_pAquaDlg = NULL;

@@ -27,8 +27,13 @@
 #define IDC_ST_FRAMES                   1014
 #define IDC_ST_FRAMES2                  1015
 #define IDC_LIST2                       1016
-#define IDC_EDIT1                       1017
+#define IDC_LIST_FILE                   1016
+#define IDC_EDIT_PATH                   1017
 #define IDC_TAB_FUNCTION                1018
+#define IDC_BUTTON_FILE                 1019
+#define IDC_BUTTON_FOLDERPATH           1020
+#define IDC_STATIC_IMAGEVIEW            1022
+#define IDC_STATIC_ORIIMAGEVIEW         1023
 #define ID_MENUE_SORTER                 32771
 #define ID_MENU_COUNTING                32772
 
@@ -38,7 +43,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        139
 #define _APS_NEXT_COMMAND_VALUE         32773
-#define _APS_NEXT_CONTROL_VALUE         1019
+#define _APS_NEXT_CONTROL_VALUE         1023
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

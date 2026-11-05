@@ -94,6 +94,7 @@ BEGIN_MESSAGE_MAP(CAquaInterfaceDlg, CDialogEx)
 	ON_BN_CLICKED(IDC_END, &CAquaInterfaceDlg::OnBnClickedEnd)             
 	ON_NOTIFY(LVN_ITEMCHANGED, IDC_LIST1, &CAquaInterfaceDlg::OnLvnItemchangedList1)
 	ON_BN_CLICKED(IDC_BUTTON_SETTINGFILE, &CAquaInterfaceDlg::OnBnClickedButtonSettingfile)
+	ON_STN_CLICKED(IDC_ST_FRAMES, &CAquaInterfaceDlg::OnStnClickedStFrames)
 END_MESSAGE_MAP()
 
 
@@ -156,6 +157,19 @@ BOOL CAquaInterfaceDlg::OnInitDialog()
 	m_pieUnk = m_pPie->AddItem(_T("미판정"), RGB(140, 140, 140), true, false);
 	m_pPie->SetTotalLabel(_T("합계"));
 	m_pPie->Invalidate(FALSE);
+
+	if (m_pBrIdle == nullptr)
+	{
+		m_pBrIdle = new CBrush(RGB(200, 200, 200));
+	}
+	if (m_pBrOk == nullptr)
+	{
+		m_pBrOk = new CBrush(RGB(40, 170, 70));
+	}
+	if (m_pBrLost == nullptr)
+	{
+		m_pBrLost = new CBrush(RGB(220, 50, 50));
+	}
 
 	ResetStatus();
 
@@ -286,14 +300,14 @@ void CAquaInterfaceDlg::ResetStatus()
 	m_lastTick = ::GetTickCount64();
 	m_lastFrames = 0;
 
-	m_pBrIdle = new CBrush(RGB(200, 200, 200));
-	m_pBrOk = new CBrush(RGB(40, 170, 70));
-	m_pBrLost = new CBrush(RGB(220, 50, 50));
 
 	SetDlgItemText(IDC_ST_FRAMES, _T("0 (0)"));
 
+	SetDlgItemText(IDC_ST_FRAMES2, _T("0 (0)"));
+
 	m_frameState = FrameState_Idle;                    // 회색
 	GetDlgItem(IDC_ST_FRAMES)->Invalidate();
+	GetDlgItem(IDC_ST_FRAMES2)->Invalidate();
 }
 
 
@@ -334,6 +348,7 @@ void CAquaInterfaceDlg::UpdateStatus()
 	// 프레임 (누락)
 	s = FormatNum(frames) + _T(" (") + FormatNum(lost) + _T(")");
 	SetDlgItemText(IDC_ST_FRAMES, s);
+	SetDlgItemText(IDC_ST_FRAMES2, s);
 
 	// 색 상태 : 누락 있으면 빨강, 없으면 초록
 	FrameState st = (lost > 0) ? FrameState_Lost : FrameState_Ok;
@@ -341,6 +356,7 @@ void CAquaInterfaceDlg::UpdateStatus()
 	{
 		m_frameState = st;
 		GetDlgItem(IDC_ST_FRAMES)->Invalidate();       // 색 바뀔 때만 다시 그림
+		GetDlgItem(IDC_ST_FRAMES2)->Invalidate();
 	}
 }
 
@@ -474,6 +490,11 @@ void CAquaInterfaceDlg::OnLvnItemchangedList1(NMHDR* pNMHDR, LRESULT* pResult)
 }
 
 void CAquaInterfaceDlg::OnBnClickedButtonSettingfile()
+{
+	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
+}
+
+void CAquaInterfaceDlg::OnStnClickedStFrames()
 {
 	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
 }

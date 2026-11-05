@@ -474,7 +474,7 @@ void CBaslerLineScan::WriteItem(const SaveItem& item)
 {
     const SaveConfig sc = GetSaveConfigCopy();
 
-    const char* ext = "bmp";
+    const char* ext = "png";
     std::vector<int> params;
     if (sc.format == SaveFormat_Png)
     {

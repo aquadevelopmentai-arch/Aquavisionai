@@ -144,11 +144,14 @@
       <LanguageStandard>stdcpp20</LanguageStandard>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <AdditionalIncludeDirectories>$(PYLON_INC);$(BOOST_INC);$(SolutionDir)\AquaInterface;$(VCPKG_INC)\opencv4</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
+      <AdditionalLibraryDirectories>$(PYLON_LIB);$(BOOST_LIB);$(VCPKG_LIB);</AdditionalLibraryDirectories>
+      <AdditionalDependencies>GCBase_MD_VC142_v3_5_Basler_pylon_v1.lib;GenApi_MD_VC142_v3_5_Basler_pylon_v1.lib;PylonBase_v12.lib;PylonUtility_v12.lib;libboost_thread-vc145-mt-x64-1_92.lib;opencv_world4.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Manifest>
       <EnableSegmentHeap>true</EnableSegmentHeap>
