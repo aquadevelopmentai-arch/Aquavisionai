@@ -41,7 +41,7 @@ std::string COnnxruntime::ShapeStr(const std::vector<int64_t>& shape) const
 	return r + "]";
 }
  
-// CP_ACP (MFC CStringA) -> wide. 한글 경로 OK
+
 std::wstring COnnxruntime::ConvertToWString(const std::string& strtowstr)
 {
 	if (strtowstr.empty())

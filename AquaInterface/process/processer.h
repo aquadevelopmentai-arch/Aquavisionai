@@ -20,13 +20,40 @@ class PROCESS_API Cprocesser
 public:
 	Cprocesser();
 	~Cprocesser();
-
+	/*
+	* @brief Initialize YoloSeg
+	* @param [IN] modelPath : YoloSeg model file path
+	* @param [IN] sp        : YoloSeg parameters
+	* @return true if initialized successfully, false otherwise
+	*/
 	bool InitYoloseg(const std::string& modelPath, const SegParams& sp = SegParams());
+	/*
+	* @brief Initialize Anomaly Detection
+	* @param [IN] modelPath : Anomaly model file path
+	* @param [IN] ap        : Anomaly parameters
+	* @return true if initialized successfully, false otherwise
+	*/
 	bool InitAnomaly(const std::string& modelPath, const AnomalyParams& ap = AnomalyParams());
+	/*
+	* @brief Initialize Shrimp Crop
+	* @return true if initialized successfully, false otherwise
+	*/
 	bool initCrrop();
+	/*
+	* @brief Run YoloSeg inference
+	* @param [IN] bgr  : Input image
+	* @param [OUT] result : Inference result
+	* @return true if inference completed successfully, false otherwise
+	*/
 	bool RunYoloseg(cv::Mat& bgr, SegResult& result);
+	/*
+	* @brief Draw segmentation results on the image
+	* @param [IN] img  : Input image
+	* @param [IN] res  : Segmentation result
+	* @param [IN] opt  : Drawing options
+	*/
 	void Draw(cv::Mat& img, const SegResult& res, const SegDrawOptions& opt) const;
-	bool Runprocess(cv::Mat& bgr, SegResult& result);
+
 	bool InitFromSetting(const std::string& iniPath, std::string& segmodel, std::string& admodel);
 	bool IsAnomalyReady() const;
 	bool IsFile(const std::string& path) const;
