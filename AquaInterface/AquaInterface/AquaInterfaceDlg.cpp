@@ -13,13 +13,6 @@
 
 
 // ============================================================
-//  표시 규칙
-//    [VS 기본]  : VS 마법사가 만든 코드 (지우면 링크 에러)
-//    [추가]     : 카메라 / LED 연동으로 새로 넣은 코드
-// ============================================================
-
-
-// ============================================================
 //  [VS 기본] CAboutDlg : 응용 프로그램 정보 대화 상자
 // ============================================================
 class CAboutDlg : public CDialogEx
@@ -95,6 +88,7 @@ BEGIN_MESSAGE_MAP(CAquaInterfaceDlg, CDialogEx)
 	ON_NOTIFY(LVN_ITEMCHANGED, IDC_LIST1, &CAquaInterfaceDlg::OnLvnItemchangedList1)
 	ON_BN_CLICKED(IDC_BUTTON_SETTINGFILE, &CAquaInterfaceDlg::OnBnClickedButtonSettingfile)
 	ON_STN_CLICKED(IDC_ST_FRAMES, &CAquaInterfaceDlg::OnStnClickedStFrames)
+	ON_STN_CLICKED(IDC_PIE_STATS, &CAquaInterfaceDlg::OnStnClickedPieStats)
 END_MESSAGE_MAP()
 
 
@@ -495,6 +489,11 @@ void CAquaInterfaceDlg::OnBnClickedButtonSettingfile()
 }
 
 void CAquaInterfaceDlg::OnStnClickedStFrames()
+{
+	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
+}
+
+void CAquaInterfaceDlg::OnStnClickedPieStats()
 {
 	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
 }

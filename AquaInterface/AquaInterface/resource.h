@@ -34,6 +34,10 @@
 #define IDC_BUTTON_FOLDERPATH           1020
 #define IDC_STATIC_IMAGEVIEW            1022
 #define IDC_STATIC_ORIIMAGEVIEW         1023
+#define IDC_BUTTON1                     1024
+#define IDC_BUTTON_SAVE                 1024
+#define IDC_BUTTON2                     1025
+#define IDC_BUTTON_ALLCOUNTING          1025
 #define ID_MENUE_SORTER                 32771
 #define ID_MENU_COUNTING                32772
 
@@ -43,7 +47,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        139
 #define _APS_NEXT_COMMAND_VALUE         32773
-#define _APS_NEXT_CONTROL_VALUE         1023
+#define _APS_NEXT_CONTROL_VALUE         1026
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

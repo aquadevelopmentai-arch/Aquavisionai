@@ -7,7 +7,8 @@
 
 // Ccounting 대화 상자
 
-
+#define WM_COUNT_PROGRESS (WM_APP + 101)
+#define WM_COUNT_DONE     (WM_APP + 102)
 struct AreaRect
 {
 	int x1, y1, x2, y2;
@@ -33,6 +34,22 @@ struct AreaRect
 	}
 };
 
+struct FileRowData                 // AddFileItem에서 new, LVN_DELETEITEM에서 delete
+{
+	CString    path;
+	SegResult* pSeg = NULL;        // 카운팅 전 NULL, 결과 저장 시 new
+};
+
+struct CountRowResult        // 작업 스레드에서 new, OnCountProgress 에서 delete
+{
+	int       row = -1;
+	bool      ok = false;
+	SegResult seg;
+	cv::Mat   origin;
+	cv::Mat   result;
+};
+
+
 class CcountingDlg : public CDialogEx
 {
 	DECLARE_DYNAMIC(CcountingDlg)
@@ -51,6 +68,8 @@ public:
 	bool IsImageFile(const CString& path) const;
 
 	virtual BOOL OnInitDialog();
+
+	void OnLvnDeleteitemListFile(NMHDR* pNMHDR, LRESULT* pResult);
 // 대화 상자 데이터입니다.
 #ifdef AFX_DESIGN_TIME
 	enum { IDD = IDD_COUNTING_DIALOG };
@@ -87,7 +106,32 @@ private:
 	Cprocesser* m_pProc;
 	SegResult m_SegResult;
 
+	CWinThread* m_pCountThread;
+	std::atomic<bool>    m_bStopCount;
+	bool                 m_bCounting;
+	std::vector<CString> m_vCountPaths;
+	CString              m_strCountSaveDir;
+	int                  m_nAllImages, m_nAllCount, m_nAllDead, m_nAllFail;
+	double               m_dAllMs;
+
+	static UINT CountAllThread(LPVOID pParam);     // AfxBeginThread 진입점 (static 필수)
+	UINT RunCountAll();
+	void SetBusy(bool busy);
+	FileRowData* GetRow(int row) const;
+	void SetRowResult(int row, const SegResult& seg);
+	void SetRowText(int row, const SegResult& seg);
+	double TotalMs(const SegResult& seg) const;
+	bool SaveImageW(const CString& path, const cv::Mat& img) const;
+	bool AppendResultCsv(const CString& csvPath, const CString& fileName, const SegResult& res) const;
+	CString m_strSaveDir;
+	void OnDestroy();
+
 public:
 	afx_msg void OnBnClickedButtonStart();
 	afx_msg void OnBnClickedButtonFolderpath();
+	afx_msg void OnBnClickedButtonSave();
+	afx_msg void OnBnClickedButtonAllcounting();
+	afx_msg LRESULT OnCountProgress(WPARAM wParam, LPARAM lParam);
+	afx_msg LRESULT OnCountDone(WPARAM wParam, LPARAM lParam);
+	void StopCountAll();
 };

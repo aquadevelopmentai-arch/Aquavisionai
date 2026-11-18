@@ -157,16 +157,19 @@
     </Manifest>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Anomaly.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="Onnxruntime.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="processer.h" />
+    <ClInclude Include="shrimp_crop.h" />
     <ClInclude Include="YoloSeg.h" />
     <ClInclude Include="YoloSegtypes.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Anomaly.cpp" />
     <ClCompile Include="dllmain.cpp" />
-    <ClCompile Include="Onnxuntime.cpp" />
+    <ClCompile Include="Onnxruntime.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
@@ -174,6 +177,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="processer.cpp" />
+    <ClCompile Include="shrimp_crop.cpp" />
     <ClCompile Include="YoloSeg.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

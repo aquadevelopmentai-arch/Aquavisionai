@@ -66,9 +66,9 @@ BOOL Caquamain::OnInitDialog()
 	if (m_pProcess == NULL)
 	{
 		m_pProcess = new Cprocesser();
-		if (m_pProcess->InitYoloseg())
+		if (m_pProcess->InitYoloseg() && m_pProcess->InitAnomaly() && m_pProcess->initCrrop())
 		{
-			std::cout << "[Process] Yoloseg initialized successfully" << std::endl;
+			std::cout << "[Process] Yoloseg, Anomaly, and Crop initialized successfully" << std::endl;
 		}
 		else
 		{
