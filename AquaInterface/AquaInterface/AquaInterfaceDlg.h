@@ -75,6 +75,7 @@ protected:
 	FrameState m_frameStateRight = FrameState_Idle;
 	ULONGLONG     m_lastTick = 0;
 	std::uint64_t m_lastFrames = 0;
+	std::uint64_t m_lastFramesRight = 0;
 
 	CBrush* m_pBrIdle = nullptr;   // 회색
 	CBrush* m_pBrOk = nullptr;   // 초록
