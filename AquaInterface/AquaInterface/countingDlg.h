@@ -81,6 +81,7 @@ protected:
 	afx_msg void OnClickedButtonOpenFile();
 	afx_msg void OnLvnItemchangedListFile(NMHDR* pNMHDR, LRESULT* pResult);
 	
+
 	void ShowFile(int index);
 	DECLARE_MESSAGE_MAP()
 private:
@@ -126,6 +127,8 @@ private:
 	CString m_strSaveDir;
 	void OnDestroy();
 
+	void EnableCloseButton(bool enable);
+
 public:
 	afx_msg void OnBnClickedButtonStart();
 	afx_msg void OnBnClickedButtonFolderpath();
@@ -134,4 +137,5 @@ public:
 	afx_msg LRESULT OnCountProgress(WPARAM wParam, LPARAM lParam);
 	afx_msg LRESULT OnCountDone(WPARAM wParam, LPARAM lParam);
 	void StopCountAll();
+	bool IsCounting() const { return m_bCounting; }
 };

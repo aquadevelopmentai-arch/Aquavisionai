@@ -23,11 +23,6 @@ Cprocesser::~Cprocesser()
 		delete m_pYoloseg;
 		m_pYoloseg = NULL;
 	}
-	if (m_pOrtEnv)
-	{
-		delete m_pOrtEnv;
-		m_pOrtEnv = NULL;
-	}
 	if (m_pAnomaly)
 	{
 		delete m_pAnomaly;
@@ -37,6 +32,11 @@ Cprocesser::~Cprocesser()
 	{
 		delete m_pCrop;
 		m_pCrop = NULL;
+	}
+	if (m_pOrtEnv)
+	{
+		delete m_pOrtEnv;
+		m_pOrtEnv = NULL;
 	}
 }
 

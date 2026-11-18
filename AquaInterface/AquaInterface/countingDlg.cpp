@@ -521,6 +521,7 @@ void CcountingDlg::SetBusy(bool busy)
 	GetDlgItem(IDC_BUTTON_SAVE)->EnableWindow(!busy);
 	GetDlgItem(IDC_BUTTON_ALLCOUNTING)->SetWindowText(busy ? _T("중지") : _T("전체 카운팅"));
 	_filelist_control.EnableWindow(!busy);
+	EnableCloseButton(!busy);
 }
 
 // 진행 중이면 멈추고 스레드 정리 (Caquamain::OnDestroy 에서 Cprocesser 해제 전에 호출)
@@ -542,6 +543,18 @@ void CcountingDlg::StopCountAll()
 			delete (CountRowResult*)msg.lParam;
 	}
 	std::cout << "[CountAll] stopped and cleaned up" << std::endl;
+}
+
+
+void CcountingDlg::EnableCloseButton(bool enable)
+{
+	CWnd* pTop = GetTopLevelParent();                 // 탭 안에 있어도 메인 창을 찾음
+	if (pTop == NULL)
+		return;
+	CMenu* pSys = pTop->GetSystemMenu(FALSE);
+	if (pSys != NULL)
+		pSys->EnableMenuItem(SC_CLOSE, MF_BYCOMMAND | (enable ? MF_ENABLED : (MF_DISABLED | MF_GRAYED)));
+	std::cout << "[CountAll] close button " << (enable ? "enabled" : "disabled") << std::endl;
 }
 
 // ==================================================================== 저장
