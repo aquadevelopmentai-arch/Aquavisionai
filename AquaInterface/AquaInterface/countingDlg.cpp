@@ -30,6 +30,7 @@ CcountingDlg::CcountingDlg(CWnd* pParent /*=nullptr*/)
 
 CcountingDlg::~CcountingDlg()
 {
+	_result_control.SetImage(NULL);
 }
 
 void CcountingDlg::DoDataExchange(CDataExchange* pDX)
@@ -75,6 +76,7 @@ BOOL CcountingDlg::OnInitDialog()
 void CcountingDlg::OnDestroy()
 {
 	StopCountAll();                          // Caquamain::OnDestroy 에서 먼저 불렀으면 여기선 아무것도 안 함
+	_result_control.SetImage(NULL);
 	CDialogEx::OnDestroy();
 }
 
@@ -685,6 +687,7 @@ void CcountingDlg::DrawViews()
 			p_resultdc->FillSolidRect(&rect, GetSysColor(COLOR_BTNFACE));
 		p_resultwnd->ReleaseDC(p_resultdc);
 	}
+	_result_control.SetImage(&_result_matrix);
 }
 
 void CcountingDlg::DisplayImage(const cv::Mat& image_matrix, CDC* p_dc, RECT rect)

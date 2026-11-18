@@ -4,7 +4,7 @@
 #include <algorithm>
 #include <vector>
 #include "processer.h"
-
+#include "ZoomImageView.h"
 // Ccounting 대화 상자
 
 #define WM_COUNT_PROGRESS (WM_APP + 101)
@@ -93,7 +93,7 @@ private:
 	CEdit m_point_control;
 
 	CStatic _image_control;
-	CStatic _result_control;
+	//CStatic _result_control;
 	CListCtrl _filelist_control;
 	CEdit m_location_control;
 
@@ -114,6 +114,8 @@ private:
 	CString              m_strCountSaveDir;
 	int                  m_nAllImages, m_nAllCount, m_nAllDead, m_nAllFail;
 	double               m_dAllMs;
+	CZoomImageView _result_control;
+
 
 	static UINT CountAllThread(LPVOID pParam);     // AfxBeginThread 진입점 (static 필수)
 	UINT RunCountAll();
@@ -128,6 +130,7 @@ private:
 	void OnDestroy();
 
 	void EnableCloseButton(bool enable);
+	
 
 public:
 	afx_msg void OnBnClickedButtonStart();

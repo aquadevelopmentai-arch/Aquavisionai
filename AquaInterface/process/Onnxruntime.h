@@ -38,23 +38,40 @@ public:
 	*/
 	bool CreateSession(const std::string& stronnxfilePath, int num_thread, Ort::Env* env, bool bUseCuda = true, int nDeviceId = 0);
 	std::wstring ConvertToWString(const std::string& strtowstr);
-
+	/*
+	* 2026/11/03 kimju
+	* @brief Release ONNX Runtime session
+	*/
 	void ReleaseSession();
+	/*
+	* 2026/11/03 kimju
+	* @brief Check if the ONNX Runtime session is created
+	* @return true if session is created, false otherwise
+	*/
 	bool IsCreated() const { return m_pOrtSession != NULL; }
+	/*
+	* 2026/11/03 kimju
+	* @brief Check if the ONNX Runtime session is using CUDA
+	* @return true if session is using CUDA, false otherwise
+	*/
 	bool IsCuda() const { return m_bCuda; }
 
-
+	/*
+	* 2026/11/18 kimju
+	* @brief Get input and output names for the ONNX model
+	* @return reference to vector of input and output names
+	*/
 	std::vector<const char*>& GetInputNames() { return m_vInputNamePtr; }
 	std::vector<const char*>& GetOutputNames() { return m_vOutputNamePtr; }
 	/*
-	* 2026/11/03
+	* 2026/11/03 kimju
 	* @brief input tensor type 및 shape 등 정보 반환
 	* @param [IN] nidx    : input index, default 0
 	*/
 	std::vector<int64_t> GetInputShape(int nidx = 0);
 	Ort::TypeInfo GetInputtensorTypeInfo(int nidx = 0);
 	/*
-	* 2026/11/03
+	* 2026/11/03 kimju
 	* @brief run ONNX model inference
 	* @param [IN] vInputNames  : input name vector
 	* @param [IN] input_tensor : input tensor
@@ -62,7 +79,16 @@ public:
 	*/
 	bool Run(Ort::Value& input_tensor, std::vector<Ort::Value>& vOutputs);
 private:
-
+	/*
+	* 2026/11/18 kimju
+	* @brief Create ONNX Runtime session with CUDA or CPU
+	* @param [IN] env        : Ort::Env pointer
+	* @param [IN] wpath      : ONNX model file path (wide string)
+	* @param [IN] num_thread : number of threads for inference
+	* @param [IN] bCuda      : true for CUDA, false for CPU
+	* @param [IN] nDeviceId  : CUDA device ID (0,1	,...)
+	* @return true if session created successfully, false otherwise
+	*/
 	bool CreateSessionWith(Ort::Env* env, const std::wstring& wpath, int num_thread, bool bCuda, int nDeviceId);
 	bool ReadNames();
 	std::string ShapeStr(const std::vector<int64_t>& shape) const;

@@ -231,8 +231,8 @@ cv::Scalar Cprocesser::ObjectColor(const SegObject& o, bool showPartial) const
 
 void Cprocesser::PutTextOutlined(cv::Mat& img, const std::string& s, cv::Point org, double fs, cv::Scalar col, int th) const
 {
-	cv::putText(img, s, org, cv::FONT_HERSHEY_SIMPLEX, fs, cv::Scalar(0, 0, 0), th + 2, cv::LINE_AA);   // 검은 테두리
-	cv::putText(img, s, org, cv::FONT_HERSHEY_SIMPLEX, fs, col, th, cv::LINE_AA);
+	cv::putText(img, s, org, cv::FONT_HERSHEY_SIMPLEX, fs, cv::Scalar(0, 0, 0), th + 2, cv::LINE_8);   // 검은 테두리
+	cv::putText(img, s, org, cv::FONT_HERSHEY_SIMPLEX, fs, col, th, cv::LINE_8);
 }
 
 void Cprocesser::Draw(cv::Mat& img, const SegResult& res, const SegDrawOptions& opt) const

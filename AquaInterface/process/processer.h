@@ -53,6 +53,8 @@ public:
 	* @param [IN] opt  : Drawing options
 	*/
 	void Draw(cv::Mat& img, const SegResult& res, const SegDrawOptions& opt) const;
+	bool Runprocess(cv::Mat& bgr, SegResult& result);
+
 
 	bool InitFromSetting(const std::string& iniPath, std::string& segmodel, std::string& admodel);
 	bool IsAnomalyReady() const;

@@ -21,7 +21,10 @@ class CShrimpCrop
 public:
 	CShrimpCrop();
 	~CShrimpCrop();
-
+	/*
+	* @brief Set the crop parameters
+	* @param [IN] cp : Crop parameters
+	*/
 	void SetParams(const CropParams& cp) { m_params = cp; }
 	const CropParams& GetParams() const { return m_params; }
 
@@ -36,6 +39,12 @@ public:
 	*/
 	bool Make(const cv::Mat& bgr, SegResult& res, std::vector<cv::Mat>& crops, std::vector<int>& objIdx,
 		std::vector<cv::Mat>* pPartial = NULL, std::vector<int>* pPartialIdx = NULL);
+	/*
+	* @brief Make a single crop from a region of interest and a mask
+	* @param [IN] roiImg : Region of interest image
+	* @param [IN] mask : Mask for the crop
+	* @return cropped image
+	*/
 	cv::Mat MakeCrop(const cv::Mat& roiImg, const cv::Mat& mask) const;
 	void Log(const char* level, const char* fmt, ...) const;     // std::cout
 
