@@ -97,7 +97,7 @@ BOOL CAquaInterfaceApp::InitInstance()
 	return FALSE;
 }
 
-//#pragma comment(linker, "/entry:WinMainCRTStartup /subsystem:console")
+#pragma comment(linker, "/entry:WinMainCRTStartup /subsystem:console")
 
 
 // [추가] ---- GDI+ 해제 (대화 상자가 모두 사라진 뒤 호출됨) ----

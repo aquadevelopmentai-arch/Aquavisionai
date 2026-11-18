@@ -172,6 +172,19 @@ bool COnnxruntime::CreateSessionWith(Ort::Env* env, const std::wstring& wpath, i
 		m_bCuda = false;
 		return false;
 	}
+	catch (const std::exception& e)
+	{
+		Log("ERROR", std::string("CreateSession ") + (bCuda ? "CUDA" : "CPU") + " failed (std): " + e.what());
+		if (pCudaOpt != NULL)
+		{
+			api.ReleaseCUDAProviderOptions(pCudaOpt);
+			pCudaOpt = NULL;
+		}
+		m_pOrtSession = NULL;
+		m_bCuda = false;
+		return false;
+	}
+	return true;
 }
  
 // names copied ONCE (AllocatedStringPtr frees its memory when it goes out of scope)

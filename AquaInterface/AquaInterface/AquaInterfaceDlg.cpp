@@ -89,6 +89,7 @@ BEGIN_MESSAGE_MAP(CAquaInterfaceDlg, CDialogEx)
 	ON_BN_CLICKED(IDC_BUTTON_SETTINGFILE, &CAquaInterfaceDlg::OnBnClickedButtonSettingfile)
 	ON_STN_CLICKED(IDC_ST_FRAMES, &CAquaInterfaceDlg::OnStnClickedStFrames)
 	ON_STN_CLICKED(IDC_PIE_STATS, &CAquaInterfaceDlg::OnStnClickedPieStats)
+	ON_STN_CLICKED(IDC_ST_FRAMES2, &CAquaInterfaceDlg::OnStnClickedStFrames2)
 END_MESSAGE_MAP()
 
 
@@ -170,24 +171,30 @@ BOOL CAquaInterfaceDlg::OnInitDialog()
 	return TRUE;
 }
 
+void CAquaInterfaceDlg::GetFrameColor(FrameState st, COLORREF* pBk, COLORREF* pFg, CBrush** ppBr) const
+{
+	switch (st)
+	{
+	case FrameState_Lost: *pBk = RGB(220, 50, 50);   *pFg = RGB(255, 255, 255); *ppBr = m_pBrLost; break;
+	case FrameState_Ok:   *pBk = RGB(40, 170, 70);   *pFg = RGB(255, 255, 255); *ppBr = m_pBrOk;   break;
+	default:              *pBk = RGB(200, 200, 200); *pFg = RGB(60, 60, 60);    *ppBr = m_pBrIdle; break;
+	}
+}
 HBRUSH CAquaInterfaceDlg::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor)
 {
 	HBRUSH hbr = CDialogEx::OnCtlColor(pDC, pWnd, nCtlColor);
+	if (m_pBrIdle == NULL || m_pBrOk == NULL || m_pBrLost == NULL)
+		return hbr;
 
-	if (pWnd->GetDlgCtrlID() == IDC_ST_FRAMES && m_pBrIdle && m_pBrOk && m_pBrLost)
+	const int id = pWnd->GetDlgCtrlID();
+	if (id == IDC_ST_FRAMES || id == IDC_ST_FRAMES2)
 	{
-		COLORREF bk;
-		CBrush* pBr;
-		switch (m_frameState)
-		{
-		case FrameState_Lost: bk = RGB(220, 50, 50); pBr = m_pBrLost; break;
-		case FrameState_Ok:   bk = RGB(40, 170, 70); pBr = m_pBrOk;   break;
-		default:              bk = RGB(200, 200, 200); pBr = m_pBrIdle; break;
-		}
-
+		const FrameState st = (id == IDC_ST_FRAMES) ? m_frameState : m_frameStateRight;
+		COLORREF bk, fg;
+		CBrush* pBr = NULL;
+		GetFrameColor(st, &bk, &fg, &pBr);
 		pDC->SetBkColor(bk);                                   // 글자 바로 뒤
-		pDC->SetTextColor(m_frameState == FrameState_Idle ? RGB(60, 60, 60)
-			: RGB(255, 255, 255));
+		pDC->SetTextColor(fg);
 		return static_cast<HBRUSH>(pBr->GetSafeHandle());     // 칸 전체
 	}
 	return hbr;
@@ -300,6 +307,7 @@ void CAquaInterfaceDlg::ResetStatus()
 	SetDlgItemText(IDC_ST_FRAMES2, _T("0 (0)"));
 
 	m_frameState = FrameState_Idle;                    // 회색
+
 	GetDlgItem(IDC_ST_FRAMES)->Invalidate();
 	GetDlgItem(IDC_ST_FRAMES2)->Invalidate();
 }
@@ -494,6 +502,11 @@ void CAquaInterfaceDlg::OnStnClickedStFrames()
 }
 
 void CAquaInterfaceDlg::OnStnClickedPieStats()
+{
+	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
+}
+
+void CAquaInterfaceDlg::OnStnClickedStFrames2()
 {
 	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
 }

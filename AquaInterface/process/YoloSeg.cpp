@@ -215,25 +215,41 @@ bool CYoloSeg::Run(const cv::Mat& bgr, SegResult& out)
 	out.cuda = m_pOnnxruntime->IsCuda();          // COnnxruntime에 IsCuda()가 없으면 이 줄 삭제
 
 	// 1) preprocess
-	auto t0 = std::chrono::steady_clock::now();
-	Letterbox lb;
-	Preprocess(bgr, lb);
-	out.preMs = MsSince(t0);
-
-	// 2) inference
-	t0 = std::chrono::steady_clock::now();
-	const std::vector<int64_t> inShape = { 1, 3, m_inH, m_inW };
-	Ort::Value input = Ort::Value::CreateTensor<float>(*m_pMemInfo, m_pBlob, (size_t)3 * m_inH * m_inW,
-		inShape.data(), inShape.size());
-	std::vector<Ort::Value> outs;
 	try
 	{
+		auto t0 = std::chrono::steady_clock::now();
+		Letterbox lb;
+		Preprocess(bgr, lb);
+		out.preMs = MsSince(t0);
+
+		t0 = std::chrono::steady_clock::now();
+		const std::vector<int64_t> inShape = { 1, 3, m_inH, m_inW };
+		Ort::Value input = Ort::Value::CreateTensor<float>(*m_pMemInfo, m_pBlob, (size_t)3 * m_inH * m_inW,inShape.data(), inShape.size());
+		std::vector<Ort::Value> outs;
 		if (!m_pOnnxruntime->Run(input, outs) || outs.empty())
 		{
 			out.error = "inference failed";
 			Log("ERROR", "[YoloSeg] Run: inference failed");
 			return false;
 		}
+		out.inferMs = MsSince(t0);
+
+		t0 = std::chrono::steady_clock::now();
+		const std::vector<int64_t> s0 = GetShape(outs[0]);
+
+		std::vector<int64_t> sp;
+		int nmIn0 = 0;
+		if (outs.size() >= 2)
+		{
+			sp = GetShape(outs[1]);                     // protos [1, nm, mh, mw]
+			if (sp.size() == 4)
+				nmIn0 = (int)sp[1];
+		}
+		const bool useMask = m_params.useMask && m_bSeg && sp.size() == 4;
+		Postprocess(outs[0].GetTensorData<float>(), s0, useMask ? outs[1].GetTensorData<float>() : nullptr, sp, nmIn0, lb, bgr.cols, bgr.rows, out);
+		out.postMs = MsSince(t0);
+		out.ok = true;
+
 	}
 	catch (const std::exception& e)
 	{
@@ -241,23 +257,6 @@ bool CYoloSeg::Run(const cv::Mat& bgr, SegResult& out)
 		Log("ERROR", "[YoloSeg] Run: %s", out.error.c_str());
 		return false;
 	}
-	out.inferMs = MsSince(t0);
-
-	// 3) postprocess
-	t0 = std::chrono::steady_clock::now();
-	const std::vector<int64_t> s0 = GetShape(outs[0]);
-	std::vector<int64_t> sp;
-	int nmIn0 = 0;                                 // mask coefficients inside output0 (seg model)
-	if (outs.size() >= 2)
-	{
-		sp = GetShape(outs[1]);                     // protos [1, nm, mh, mw]
-		if (sp.size() == 4)
-			nmIn0 = (int)sp[1];
-	}
-	const bool useMask = m_params.useMask && m_bSeg && sp.size() == 4;
-	Postprocess(outs[0].GetTensorData<float>(), s0, useMask ? outs[1].GetTensorData<float>() : nullptr, sp, nmIn0, lb, bgr.cols, bgr.rows, out);
-	out.postMs = MsSince(t0);
-	out.ok = true;
 
 	int nPoly = 0;
 	for (const SegObject& o : out.objects)

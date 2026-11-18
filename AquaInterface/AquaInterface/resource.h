@@ -36,7 +36,6 @@
 #define IDC_STATIC_ORIIMAGEVIEW         1023
 #define IDC_BUTTON1                     1024
 #define IDC_BUTTON_SAVE                 1024
-#define IDC_BUTTON2                     1025
 #define IDC_BUTTON_ALLCOUNTING          1025
 #define ID_MENUE_SORTER                 32771
 #define ID_MENU_COUNTING                32772

@@ -136,7 +136,7 @@ bool CAnomaly::Open(const std::string& modelPath, int num_thread, Ort::Env* pEnv
 	std::memset(m_pBlob, 0, n * sizeof(float));
 
 	// 5) warmup with the SAME shape as real runs -> cuDNN tuned here, not on the first image
-	for (int i = 0; i < params.warmup; ++i)
+	for (int i = 0; i < m_params.warmup; ++i)
 	{
 		auto t0 = std::chrono::steady_clock::now();
 		std::vector<Ort::Value> outs;
@@ -146,7 +146,7 @@ bool CAnomaly::Open(const std::string& modelPath, int num_thread, Ort::Env* pEnv
 			Close();
 			return false;
 		}
-		std::cout <<"INFO [Anomaly] warmup batch "<< i + 1<<params.warmup<< m_params.maxBatch<<std::endl;
+		std::cout <<"INFO [Anomaly] warmup batch "<< i + 1<<" " << m_params.warmup << " " << m_params.maxBatch << std::endl;
 	}
 	return true;
 }

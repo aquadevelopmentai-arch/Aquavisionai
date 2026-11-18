@@ -56,7 +56,30 @@ bool Cprocesser::initCrrop()
 	}
 	return true;
 }
-bool Cprocesser::InitAnomaly()
+bool Cprocesser::IsFile(const std::string& path) const
+{
+	if (path.empty())
+		return false;
+	const DWORD attr = ::GetFileAttributesA(path.c_str());
+	return attr != INVALID_FILE_ATTRIBUTES && !(attr & FILE_ATTRIBUTE_DIRECTORY);
+}
+
+int Cprocesser::ReadIniInt(const std::string& iniPath, const char* section, const char* key, int def) const
+{
+	return (int)::GetPrivateProfileIntA(section, key, def, iniPath.c_str());
+}
+
+float Cprocesser::ReadIniFloat(const std::string& iniPath, const char* section, const char* key, float def) const
+{
+	const std::string s = ReadIniString(iniPath, section, key);
+	if (s.empty())
+		return def;
+	char* end = NULL;
+	const float v = strtof(s.c_str(), &end);
+	return (end == s.c_str()) ? def : v;                    // 숫자가 아니면 기본값
+}
+
+bool Cprocesser::InitAnomaly(const std::string& modelPath, const AnomalyParams& ap)
 {
 	if (m_pOrtEnv == NULL)
 	{
@@ -66,18 +89,21 @@ bool Cprocesser::InitAnomaly()
 	{
 		m_pAnomaly = new CAnomaly();
 	}
-	const std::string modelPath = GetExeDir() + "\\efficientad_medium.onnx";
-	std::cout << "[Processer] anomaly model : " << modelPath << std::endl;
-	if (::GetFileAttributesA(modelPath.c_str()) == INVALID_FILE_ATTRIBUTES)
+	std::string modelpath = modelPath;
+	
+	if (!IsFile(modelpath))
 	{
-		std::cout << "[Processer] model file not found : " << modelPath << std::endl;
+		modelpath = GetExeDir() + "\\efficientad_medium.onnx";
+	}
+	//const std::string modelPath = GetExeDir() + "\\efficientad_medium.onnx";
+	std::cout << "[Processer] anomaly model : " << modelpath << std::endl;
+	if (!IsFile(modelpath))
+	{
+		std::cout << "[Processer] model file not found : " << modelpath << std::endl;
 		return false;
 	}
-	AnomalyParams ap;
-	ap.maxBatch = 4;
-	ap.threshold = 0.20f;
-	ap.warmup = 1;
-	if (!m_pAnomaly->Open(modelPath, 2, m_pOrtEnv, ap))
+
+	if (!m_pAnomaly->Open(modelpath, 2, m_pOrtEnv, ap))
 	{
 		std::cout << "[Processer] InitAnomaly FAIL" << std::endl;
 		return false;
@@ -86,7 +112,7 @@ bool Cprocesser::InitAnomaly()
 	return true;
 }
 
-bool Cprocesser::InitYoloseg()
+bool Cprocesser::InitYoloseg(const std::string& modelPath, const SegParams& sp)
 {
 	if (m_pOrtEnv == NULL)
 	{
@@ -96,21 +122,25 @@ bool Cprocesser::InitYoloseg()
 	{
 		m_pYoloseg = new CYoloSeg();
 	}
-	const std::string modelPath = GetExeDir() + "best1560.onnx";
-	std::cout << "[Processer] seg model : " << modelPath << std::endl;
-	if (::GetFileAttributesA(modelPath.c_str()) == INVALID_FILE_ATTRIBUTES)
+	std::string modelpath = modelPath;
+	if (!IsFile(modelpath))
 	{
-		std::cout << "[Processer] model file not found : " << modelPath << std::endl;
+		modelpath = GetExeDir() + "\\best1560.onnx";
+	}
+	std::cout << "[Processer] seg model : " << modelpath << std::endl;
+	if (!IsFile(modelpath))
+	{
+		std::cout << "[Processer] model file not found : " << modelpath << std::endl;
 		return false;
 	}
-	SegParams sp;
+	//SegParams sp;
 	m_pYoloseg->SetParams(sp);
-	if (!m_pYoloseg->CreateYoloSeg(modelPath, 2, m_pOrtEnv))
+	if (!m_pYoloseg->CreateYoloSeg(modelpath, 2, m_pOrtEnv))
 	{
 		std::cout << "[Processer] InitYoloseg FAIL" << std::endl;
 		return false;
 	}
-	m_pYoloseg->Warmup(2);
+	m_pYoloseg->Warmup(sp.warmup);
 	std::cout << "[Processer] Yoloseg initialized successfully" << std::endl;
 	return true;
 }
@@ -234,16 +264,19 @@ void Cprocesser::Draw(cv::Mat& img, const SegResult& res, const SegDrawOptions& 
 			one[0].resize(o.polygon.size());
 			for (size_t i = 0; i < o.polygon.size(); ++i)
 				one[0][i] = cv::Point((int)(o.polygon[i].x * sc + 0.5), (int)(o.polygon[i].y * sc + 0.5));
-			cv::polylines(img, one, true, col, th, cv::LINE_AA);
+			cv::polylines(img, one, true, col, th, cv::LINE_8);
 		}
 		else
 		{
-			cv::rectangle(img, r, col, th, cv::LINE_AA);
+			cv::rectangle(img, r, col, th, cv::LINE_8);
 		}
 
 		// 번호 / 점수
 		std::string label;
-		if (opt.drawNumber) label = std::to_string(o.id);
+		if (opt.drawNumber)
+		{
+			label = std::to_string(o.id);
+		}
 		if (opt.drawScore)
 		{
 			char b[32];
@@ -268,9 +301,72 @@ void Cprocesser::Draw(cv::Mat& img, const SegResult& res, const SegDrawOptions& 
 		const cv::Size ts = cv::getTextSize(banner, cv::FONT_HERSHEY_SIMPLEX, bfs, th, &base);
 		cv::rectangle(img, cv::Rect(0, 0, (std::min)(img.cols, ts.width + 16), ts.height + base + 12), cv::Scalar(0, 0, 0), cv::FILLED);
 		cv::putText(img, banner, cv::Point(8, ts.height + 6), cv::FONT_HERSHEY_SIMPLEX, bfs,
-			res.ok ? cv::Scalar(255, 255, 255) : cv::Scalar(0, 0, 255), th, cv::LINE_AA);
+			res.ok ? cv::Scalar(255, 255, 255) : cv::Scalar(0, 0, 255), th, cv::LINE_8);
 	}
 
 	std::cout << "[Processer] Draw: " << res.Count() << " object(s), dead " << nDead
 		<< ", scale " << sc << ", thickness " << th << std::endl;
+}
+
+bool Cprocesser::InitFromSetting(const std::string& iniPath, std::string& segmodel, std::string& admodel)
+{
+	const std::string ini = iniPath.empty() ? GetExeDir() + "Setting.ini" : iniPath;
+	if (!IsFile(ini))
+	{
+		std::cout << "[Processer] setting not found : " << ini << std::endl;
+		return false;
+	}
+	const std::string segPath = CleanPath(ReadIniString(ini, "DEEPLEARNINGINFO", "segmodelpath"));
+	const std::string adPath = CleanPath(ReadIniString(ini, "DEEPLEARNINGINFO", "admodelpath"));
+	std::cout << "[Processer] setting : " << ini << std::endl;
+	std::cout << "  seg model : " << (segPath.empty() ? "(empty)" : segPath) << std::endl;
+	std::cout << "  ad  model : " << (adPath.empty() ? "(none -> count only)" : adPath) << std::endl;
+
+	// 1) YoloSeg : 필수
+	if (segPath.empty() || !InitYoloseg(segPath))
+	{
+		std::cout << "[Processer] InitFromSetting FAIL (seg)" << std::endl;
+		return false;
+	}
+	// 2) Anomaly + Crop : 선택 (실패해도 카운팅은 가능)
+	if (!adPath.empty() && !InitAnomaly(adPath))
+		std::cout << "[Processer] anomaly init FAIL -> count only" << std::endl;
+	return true;
+}
+
+bool Cprocesser::IsAnomalyReady() const
+{
+	return m_pAnomaly != NULL && m_pAnomaly->IsOpen() && m_pCrop != NULL;
+}
+
+std::string Cprocesser::ReadIniString(const std::string& iniPath, const char* section, const char* key) const
+{
+	char buf[1024] = { 0 };
+	::GetPrivateProfileStringA(section, key, "", buf, sizeof(buf), iniPath.c_str());   // 앞뒤 따옴표는 자동 제거
+	return std::string(buf);
+}
+
+std::string Cprocesser::CleanPath(const std::string& value) const
+{
+	// 앞뒤 공백
+	const size_t b = value.find_first_not_of(" \t\r\n");
+	if (b == std::string::npos)
+		return std::string();
+	const size_t e = value.find_last_not_of(" \t\r\n");
+	const std::string s = value.substr(b, e - b + 1);
+
+	// \\ -> \  (맨 앞 \\server 네트워크 경로는 유지)
+	std::string out;
+	for (size_t i = 0; i < s.size(); ++i)
+	{
+		if (s[i] == '\\' && out.size() > 1 && out.back() == '\\')
+			continue;
+		out += s[i];
+	}
+	// 상대 경로 -> exe 폴더
+	const bool drive = out.size() > 1 && out[1] == ':';
+	const bool unc = out.size() > 1 && out[0] == '\\' && out[1] == '\\';
+	if (!out.empty() && !drive && !unc)
+		out = GetExeDir() + out;
+	return out;
 }

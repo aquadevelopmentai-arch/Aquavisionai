@@ -209,7 +209,20 @@ bool Caquamain::EnsureProcesser()
 	std::cout << "[Main] processer init" << std::endl;
 	BeginWaitCursor();
 	m_pProcess = new Cprocesser();
-	if (!m_pProcess->InitYoloseg())                       // 필수
+	std::string segpath, adpath;
+	const bool ok = m_pProcess->InitFromSetting("Setting.ini", segpath, adpath);
+	SegParams sp;
+	sp.useCuda = m_pProcess->ReadIniInt("Setting.ini", "DEEPLEARNINGINFO", "usecuda", true);
+	sp.deviceId = m_pProcess->ReadIniInt("Setting.ini", "DEEPLEARNINGINFO", "deviceid", 0);
+	sp.confTh = m_pProcess->ReadIniFloat("Setting.ini", "SEGMENTATION", "confthreashold", 0.25f);
+	sp.iouTh = m_pProcess->ReadIniFloat("Setting.ini", "SEGMENTATION", "iouthreashold", 0.5f);
+	sp.maxDet = m_pProcess->ReadIniInt("Setting.ini", "SEGMENTATION", "maxdetection", 1000);
+	sp.maskTh = m_pProcess->ReadIniFloat("Setting.ini", "SEGMENTATION", "maskthreashold", 0.5f);
+	sp.useMask = m_pProcess->ReadIniInt("Setting.ini", "SEGMENTATION", "usemask", true);
+	sp.warmup = m_pProcess->ReadIniInt("Setting.ini", "DEEPLEARNINGINFO", "segwarmup", 1);
+	sp.minPolyArea = m_pProcess->ReadIniInt("Setting.ini", "SEGMENTATION", "minpolyarea", 100);
+	sp.inputSize = m_pProcess->ReadIniInt("Setting.ini", "SEGMENTATION", "inputsize", 0);
+	if (!m_pProcess->InitYoloseg(segpath, sp))                       // 필수
 	{
 		EndWaitCursor();
 		std::cout << "[Main] Yoloseg init FAIL" << std::endl;
@@ -218,7 +231,13 @@ bool Caquamain::EnsureProcesser()
 		m_pProcess = NULL;
 		return false;
 	}
-	const bool anomalyOk = m_pProcess->InitAnomaly() && m_pProcess->initCrrop();   // 실패해도 카운팅은 가능
+	AnomalyParams ap;
+	ap.maxBatch = m_pProcess->ReadIniInt("Setting.ini", "ANOMALY", "adbatch", 4);
+	ap.threshold = m_pProcess->ReadIniFloat("Setting.ini", "ANOMALY", "adthreashold", 0.20f);
+	ap.warmup = m_pProcess->ReadIniInt("Setting.ini", "DEEPLEARNINGINFO", "Warmup", 1);
+	ap.useCuda = m_pProcess->ReadIniInt("Setting.ini", "DEEPLEARNINGINFO", "usecuda", true);
+	ap.deviceId = m_pProcess->ReadIniInt("Setting.ini", "DEEPLEARNINGINFO", "deviceid", 0);
+	const bool anomalyOk = m_pProcess->InitAnomaly(adpath, ap) && m_pProcess->initCrrop();   // 실패해도 카운팅은 가능
 	EndWaitCursor();
 	if (!anomalyOk)
 	{

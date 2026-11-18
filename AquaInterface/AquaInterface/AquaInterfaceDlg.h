@@ -72,7 +72,7 @@ protected:
 
 	// 취득 상태 표시
 	FrameState m_frameState = FrameState_Idle;
-
+	FrameState m_frameStateRight = FrameState_Idle;
 	ULONGLONG     m_lastTick = 0;
 	std::uint64_t m_lastFrames = 0;
 
@@ -93,6 +93,8 @@ protected:
 	afx_msg LRESULT OnResult(WPARAM wp, LPARAM lp);
 	afx_msg HBRUSH OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor);
 	DECLARE_MESSAGE_MAP()
+private:
+	void CAquaInterfaceDlg::GetFrameColor(FrameState st, COLORREF* pBk, COLORREF* pFg, CBrush** ppBr) const;
 public:
 	afx_msg void OnDestroy();
 	afx_msg void OnStnClickedStaticGrab();
@@ -102,4 +104,5 @@ public:
 	afx_msg void OnBnClickedButtonSettingfile();
 	afx_msg void OnStnClickedStFrames();
 	afx_msg void OnStnClickedPieStats();
+	afx_msg void OnStnClickedStFrames2();
 };
