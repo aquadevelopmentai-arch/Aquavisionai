@@ -45,7 +45,7 @@ struct BaslerCamData
     Pylon::CInstantCamera        camera;
     FrameCallback                cb   = nullptr;
     void*                        user = nullptr;
-
+	bool m_bstop = false;   // stop all threads (grab, proc, save)
     // threads + run flags
     boost::thread                grabThread;
     boost::thread                procThread;

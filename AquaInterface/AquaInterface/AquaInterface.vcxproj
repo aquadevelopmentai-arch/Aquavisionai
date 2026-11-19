@@ -210,6 +210,7 @@
     <ClInclude Include="LedCtrl.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="PieChartCtrl.h" />
+    <ClInclude Include="Process2DData.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="ThreadSafeQueue.h" />
@@ -229,6 +230,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="PieChartCtrl.cpp" />
+    <ClCompile Include="Process2DData.cpp" />
     <ClCompile Include="ZoomImageView.cpp" />
   </ItemGroup>
   <ItemGroup>

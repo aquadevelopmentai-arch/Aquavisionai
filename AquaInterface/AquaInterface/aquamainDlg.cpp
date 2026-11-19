@@ -253,12 +253,16 @@ void Caquamain::ReleaseProcesser()
 {
 	if (m_pProcess == NULL)
 		return;
+
 	if (m_pCountingDlg != NULL)
 	{
 		m_pCountingDlg->StopCountAll();                   // 혹시 돌고 있으면 정지 (보통은 위에서 막힘)
 		m_pCountingDlg->SetProcesser(NULL);               // 카운팅 탭이 지워진 객체를 안 쓰게
 	}
+														  // 혹시 돌고 있으면 정지
+	m_pAquaDlg->SetProcesser(NULL);                       // 분류기 탭이 지워진 객체를 안 쓰게
 	delete m_pProcess;                                    // ~Cprocesser : 모델 -> Env 순서로 해제
 	m_pProcess = NULL;
+	
 	std::cout << "[Main] processer released (GPU memory freed)" << std::endl;
 }

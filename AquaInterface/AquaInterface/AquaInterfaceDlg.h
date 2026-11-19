@@ -6,7 +6,9 @@
 #include "..\BaslerCamIF\BaslerLinescanCam.h"
 #include "LedCtrl.h"
 #include "Piechartctrl.h"
-
+#include "processer.h"
+#include "Process2DData.h"
+class Cprocesser;
 
 #define WM_USER_RESULT   (WM_USER + 100)   // 처리 스레드 -> UI : 분류 결과
 #define TIMER_STATUS     1                 // 상태 표시 갱신 타이머
@@ -37,6 +39,7 @@ public:
 
 	static CString FormatNum(unsigned long long v);                                 
 	static CString FormatCountSub(unsigned long long count, unsigned long long sub);
+	void SetProcesser(Cprocesser* p) { m_pProcess = p; }
 
 	// 대화 상자 데이터입니다.
 #ifdef AFX_DESIGN_TIME
@@ -51,7 +54,7 @@ protected:
 protected:
 
 	// 카메라
-	CBaslerLineScan* m_pcam = nullptr;                      // OnInitDialog에서 new, OnDestroy에서 delete
+	                      // OnInitDialog에서 new, OnDestroy에서 delete
 	static bool     OnChunk(const FrameChunk& c, void* user); // 처리 스레드에서 호출
 
 	// 상태 LED (검측 중: 초록 / 종료: 빨강)
@@ -85,7 +88,8 @@ protected:
 	void ResetStatus();
 
 	void ShowCamError(LPCTSTR title);
-
+	bool Stop();
+	void StopGrab();
 	// 생성된 메시지 맵 함수
 	virtual BOOL OnInitDialog();
 	afx_msg void OnSysCommand(UINT nID, LPARAM lParam);
@@ -95,7 +99,23 @@ protected:
 	afx_msg HBRUSH OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor);
 	DECLARE_MESSAGE_MAP()
 private:
-	void CAquaInterfaceDlg::GetFrameColor(FrameState st, COLORREF* pBk, COLORREF* pFg, CBrush** ppBr) const;
+	void GetFrameColor(FrameState st, COLORREF* pBk, COLORREF* pFg, CBrush** ppBr) const;
+	Cprocesser* m_pProcess = nullptr;
+	CBaslerLineScan* m_pcam = nullptr;
+	cProcess2DData m_processData;
+	threadsafe_queue<cProcess2DData> m_inferQ;
+
+	bool   ProcessChunk(const FrameChunk& c);
+	WPARAM MakeResult(double weightG, bool isAnomaly) const;
+
+	CWinThread* m_pInferThread = nullptr;
+	std::atomic<bool>                m_bInferRun{ false };
+	static UINT InferThread(LPVOID pParam);
+	void InferLoop();
+	void InferOne(const cProcess2DData& d);
+	bool DataToBgr(const cProcess2DData& d, cv::Mat& bgr) const;
+	bool StartInfer();
+	void StopInfer();
 public:
 	afx_msg void OnDestroy();
 	afx_msg void OnStnClickedStaticGrab();

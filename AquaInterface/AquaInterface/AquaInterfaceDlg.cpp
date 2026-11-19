@@ -141,7 +141,7 @@ BOOL CAquaInterfaceDlg::OnInitDialog()
 
 	m_pPie->SetWindowPos(nullptr,
 		rcPic.left,          // 사진 칸과 왼쪽 맞춤
-		rcPic.bottom + 50,   // 사진 칸 아래 15픽셀
+		rcPic.bottom + 350,   // 사진 칸 아래 15픽셀
 		400, 200,            // 폭, 높이
 		SWP_NOZORDER | SWP_NOACTIVATE);
 
@@ -300,16 +300,19 @@ void CAquaInterfaceDlg::ResetStatus()
 {
 	m_lastTick = ::GetTickCount64();
 	m_lastFrames = 0;
+	m_lastFramesRight = 0;
 
+	const UINT ids[] = { IDC_ST_FRAMES, IDC_ST_FRAMES2 };
 
-	SetDlgItemText(IDC_ST_FRAMES, _T("0 (0)"));
+	for (UINT id : ids)
+	{
+		CWnd* p = GetDlgItem(id);
+		if (p == NULL)
+			continue;
+		p->SetWindowText(_T("0 (0)"));
+		p->Invalidate();                         // OnCtlColor 다시 불려서 색 갱신
+	}
 
-	SetDlgItemText(IDC_ST_FRAMES2, _T("0 (0)"));
-
-	m_frameState = FrameState_Idle;                    // 회색
-
-	GetDlgItem(IDC_ST_FRAMES)->Invalidate();
-	GetDlgItem(IDC_ST_FRAMES2)->Invalidate();
 }
 
 
@@ -370,7 +373,9 @@ void CAquaInterfaceDlg::OnBnClickedEnd()
 		m_pcam->Stop();                        // 남은 저장까지 끝내고 반환
 		UpdateStatus();
 		m_frameState = FrameState_Idle;
+		m_frameStateRight = FrameState_Idle;
 		GetDlgItem(IDC_ST_FRAMES)->Invalidate();
+		GetDlgItem(IDC_ST_FRAMES2)->Invalidate();
 	}
 
 	SetRunState(false);                        // 빨강 ON
@@ -380,7 +385,7 @@ void CAquaInterfaceDlg::OnDestroy()
 {
 	KillTimer(TIMER_STATUS);
 	if (m_pcam)
-	{
+	{    
 		m_pcam->Close();                       // 창이 없어지기 전에 스레드 정리
 		delete m_pcam;                         // 카메라 해제 -> PylonTerminate
 		m_pcam = nullptr;
@@ -409,35 +414,24 @@ void CAquaInterfaceDlg::OnDestroy()
 	CDialogEx::OnDestroy();
 }
 
-
-// ============================================================
-//  [추가] 처리 스레드에서 호출 (UI 스레드 아님!)
-// ============================================================
-bool CAquaInterfaceDlg::OnChunk(const FrameChunk& c, void* user)
+bool CAquaInterfaceDlg::Stop()
 {
-	CAquaInterfaceDlg* dlg = static_cast<CAquaInterfaceDlg*>(user);
-
-	// TODO: 새우 검출 + 길이 측정 + 이상탐지 (모델 붙이면 여기서 계산)
-	//   c.data, c.width, c.height, c.stride, c.pixelFormat
-	double weightG = 0.0;     // 길이로 추정한 무게 (g)
-	bool   isAnomaly = false;   // 이상탐지 결과
-
-	// ---- 1) 무게 구간으로 수조 결정 ----
-	WPARAM wp = RESULT_UNKNOWN;
-	if (weightG <= 0.0)  wp = RESULT_UNKNOWN;   // 측정 실패
-	else if (weightG < 20.0) wp = RESULT_TANK_C;    // 예시 기준 (나중에 ini 값으로)
-	else if (weightG < 23.0) wp = RESULT_TANK_B;
-	else                      wp = RESULT_TANK_A;
-
-	// ---- 2) 불량이면 플래그 ----
-	if (isAnomaly)
-		wp |= RESULT_FLAG_NG;
-
-	// ---- 3) UI 로 전달 (PostMessage 만, SendMessage 금지 -> Stop 시 데드락) ----
-	dlg->PostMessage(WM_USER_RESULT, wp, (LPARAM)c.frameIndex);
-
-	return isAnomaly;           // true -> 이미지 저장 (SaveMode_Requested)
+	StopGrab();
+	if (m_pcam != nullptr)
+	{
+		m_pcam->Close();
+	}
+	return true;
 }
+void CAquaInterfaceDlg::StopGrab()
+{
+	if (m_pcam == nullptr || !m_pcam->IsGrabbing())
+		return;
+	std::cout << "[Sorter] StopGrab (tab change / release)" << std::endl;
+	OnBnClickedEnd();          // KillTimer -> m_pcam->Stop() (스레드 join) -> UpdateStatus -> SetRunState(false)
+}
+
+// ============================================================
 
 // ============================================================
 //  [추가] UI 스레드 : 결과 카운트 / 상태 표시
@@ -467,6 +461,131 @@ LRESULT CAquaInterfaceDlg::OnResult(WPARAM wp, LPARAM /*lp*/)
 
 
 	return 0;
+}
+
+WPARAM CAquaInterfaceDlg::MakeResult(double weightG, bool isAnomaly) const
+{
+	WPARAM wp = RESULT_UNKNOWN;
+	if (weightG <= 0.0)      wp = RESULT_UNKNOWN;
+	else if (weightG < 20.0) wp = RESULT_TANK_C;
+	else if (weightG < 23.0) wp = RESULT_TANK_B;
+	else                     wp = RESULT_TANK_A;
+	if (isAnomaly)
+		wp |= RESULT_FLAG_NG;
+	return wp;
+}
+
+bool CAquaInterfaceDlg::OnChunk(const FrameChunk& c, void* user)
+{
+	CAquaInterfaceDlg* dlg = static_cast<CAquaInterfaceDlg*>(user);
+	if (dlg == nullptr)
+		return false;
+	return dlg->ProcessChunk(c);
+}
+bool CAquaInterfaceDlg::ProcessChunk(const FrameChunk& c)
+{
+	if (!m_bInferRun)
+		return false;
+	cProcess2DData* p = new cProcess2DData();
+
+	if (!p->set_from_chunk(c))                       // c.data valid only here -> copy now
+	{
+		delete p;
+		p = nullptr;
+		return false;
+	}
+	if (!m_inferQ.push(std::unique_ptr<cProcess2DData>(p)))   // ownership -> queue
+	{
+		std::cout << "inferQ size : " << m_inferQ.size() << std::endl;
+		std::cout << "[Sorter] inferQ full -> oldest dropped (frame " << c.frameIndex << ")" << std::endl;
+	}
+	return false;                                    // save request is not decided here any more
+}
+
+
+UINT CAquaInterfaceDlg::InferThread(LPVOID pParam)
+{
+	CAquaInterfaceDlg* dlg = static_cast<CAquaInterfaceDlg*>(pParam);
+	if (dlg != nullptr)
+		dlg->InferLoop();
+	return 0;
+}
+
+void CAquaInterfaceDlg::InferOne(const cProcess2DData& d)
+{
+	const ULONGLONG t0 = ::GetTickCount64();
+	const LPARAM    fr = (LPARAM)d.get_frame();
+
+	cv::Mat img;
+	if (m_pProcess == nullptr || !DataToBgr(d, img))
+	{
+		::PostMessage(m_hWnd, WM_USER_RESULT, RESULT_UNKNOWN, fr);
+		return;
+	}
+
+	SegResult seg;
+	if (!m_pProcess->Runprocess(img, seg))
+	{
+		std::cout << "[Infer] frame " << d.get_frame() << " Runprocess fail : " << seg.error << std::endl;
+		::PostMessage(m_hWnd, WM_USER_RESULT, RESULT_UNKNOWN, fr);
+		return;
+	}
+
+	int nNg = 0;
+	for (size_t i = 0; i < seg.objects.size(); ++i)
+	{
+		const SegObject& o = seg.objects[i];
+		const bool   ng = (o.verdict == Verdict::Dead);
+		const double weightG = 0.0;                  // TODO : area / length -> weight
+		const WPARAM wp = (o.verdict == Verdict::Unknown) ? RESULT_UNKNOWN : MakeResult(weightG, ng);
+		::PostMessage(m_hWnd, WM_USER_RESULT, wp, fr);
+		if (ng) ++nNg;
+	}
+	std::cout << "[Infer] frame " << d.get_frame() << " obj " << seg.objects.size() << " ng " << nNg
+		<< "  " << (::GetTickCount64() - t0) << " ms  inferQ " << m_inferQ.size() << std::endl;
+}
+
+bool CAquaInterfaceDlg::DataToBgr(const cProcess2DData& d, cv::Mat& bgr) const
+{
+	const int w = d.get_bufferWidth(), h = d.get_bufferHeight();
+	void* p = const_cast<unsigned char*>(d.get_data());
+	if (p == nullptr || w <= 0 || h <= 0)
+		return false;
+	const size_t st = (size_t)d.get_stride();
+
+	switch (d.get_pixelFormat())
+	{
+	case ChunkPix_BGR8:     bgr = cv::Mat(h, w, CV_8UC3, p, st);  return true;   // d lives until InferOne ends
+	case ChunkPix_RGB8:     cv::cvtColor(cv::Mat(h, w, CV_8UC3, p, st), bgr, cv::COLOR_RGB2BGR);    return true;
+	case ChunkPix_Mono8:    cv::cvtColor(cv::Mat(h, w, CV_8UC1, p, st), bgr, cv::COLOR_GRAY2BGR);   return true;
+	case ChunkPix_BayerRG8: cv::cvtColor(cv::Mat(h, w, CV_8UC1, p, st), bgr, cv::COLOR_BayerBG2BGR); return true;
+	case ChunkPix_BayerBG8: cv::cvtColor(cv::Mat(h, w, CV_8UC1, p, st), bgr, cv::COLOR_BayerRG2BGR); return true;
+	case ChunkPix_BayerGB8: cv::cvtColor(cv::Mat(h, w, CV_8UC1, p, st), bgr, cv::COLOR_BayerGR2BGR); return true;
+	case ChunkPix_BayerGR8: cv::cvtColor(cv::Mat(h, w, CV_8UC1, p, st), bgr, cv::COLOR_BayerGB2BGR); return true;
+	default:
+		std::cout << "[Infer] unsupported pixelFormat " << d.get_pixelFormat() << std::endl;
+		return false;
+	}
+}
+
+void CAquaInterfaceDlg::InferLoop()
+{
+	std::cout << "[Infer] thread start" << std::endl;
+	while (m_bInferRun)
+	{
+		std::unique_ptr<cProcess2DData> d = m_inferQ.wait_pop(100);
+		if (!d)
+			continue;                                // timeout -> re-check flag
+		try
+		{
+			InferOne(*d);
+		}
+		catch (const std::exception& e)
+		{
+			std::cout << "[Infer] frame " << d->get_frame() << " exception : " << e.what() << std::endl;
+		}
+	}                                                // d destroyed -> cProcess2DData delete
+	std::cout << "[Infer] thread end" << std::endl;
 }
 
 void CAquaInterfaceDlg::OnTimer(UINT_PTR nIDEvent)

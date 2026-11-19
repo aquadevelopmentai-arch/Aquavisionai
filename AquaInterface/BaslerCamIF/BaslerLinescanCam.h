@@ -58,7 +58,7 @@ enum SaveFormat
 struct SaveConfig
 {
     int  mode = SaveMode_Off;
-    int  format = SaveFormat_Bmp;
+    int  format = SaveFormat_Png;
     int  everyN = 1;                 // SaveMode_All only
     int  maxQueue = 30;                // pending images (holds driver buffers!)
     char folder[260] = "C:\\AquaImages";  // use an ASCII path

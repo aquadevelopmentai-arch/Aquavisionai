@@ -228,7 +228,7 @@ void CBaslerLineScan::Stop()
 {
     if (!m_p->bGrabRun && !m_p->procThread.joinable() && !m_p->saveThread.joinable() && !m_p->camera.IsGrabbing())
         return;
-
+    
     // 1) grab thread: exits within RetrieveResult timeout
     m_p->bGrabRun = false;
     if (m_p->grabThread.joinable())
@@ -238,18 +238,17 @@ void CBaslerLineScan::Stop()
     m_p->bProcRun = false;
     if (m_p->procThread.joinable())
     {
-        m_p->procQ.push_unique(std::unique_ptr<ProcItem>());
+        m_p->procQ.push(std::unique_ptr<ProcItem>());
         m_p->procThread.join();
     }
-    while (!m_p->procQ.empty())             // release leftover driver buffers
-        m_p->procQ.pop_unique();
-
+	// queues cleared here -> all driver buffers released -> safe to stop camera
+    m_p->procQ.clear();
+    m_p->saveQ.clear();
     // 3) save thread: flag off (it polls, no wake-up needed), flushes the rest, then exits
     //    (must finish BEFORE StopGrabbing: save items hold driver buffers)
     m_p->bSaveRun = false;
     if (m_p->saveThread.joinable())
         m_p->saveThread.join();
-
     // 4) all driver buffers released -> stop camera
     try
     {
@@ -301,7 +300,7 @@ void CBaslerLineScan::GrabLoop()
         std::unique_ptr<ProcItem> item(new ProcItem());
         item->result = r;
         item->index = m_p->frames++;
-        m_p->procQ.push_unique(std::move(item));
+        m_p->procQ.push(std::move(item));
     }
 }
 
@@ -312,7 +311,7 @@ void CBaslerLineScan::ProcLoop()
 {
     while (m_p->bProcRun)
     {
-        std::unique_ptr<ProcItem> item = m_p->procQ.pop_unique();
+        std::unique_ptr<ProcItem> item = m_p->procQ.wait_pop(100);
         if (!item)
             continue;           // wake-up signal -> re-check m_p->bProcRun
 
@@ -346,7 +345,7 @@ void CBaslerLineScan::ProcLoop()
         c.timestamp = r->GetTimeStamp();
 
         // 1) classification (user callback)
-        bool wantSave = false;
+        bool wantSave = true;
         if (m_p->cb != nullptr)
         {
             try
@@ -380,7 +379,7 @@ void CBaslerLineScan::EnqueueSave(const Pylon::CGrabResultPtr& r, std::uint64_t 
     if (limit > m_p->maxBuffers / 2) limit = m_p->maxBuffers / 2;
     if (limit < 1)                limit = 1;
 
-    if (static_cast<int>(m_p->saveQ.get_size()) >= limit)
+    if (static_cast<int>(m_p->saveQ.size()) >= limit)
     {
         ++m_p->saveDrop;           // disk too slow -> skip, never block processing
         return;
@@ -389,7 +388,7 @@ void CBaslerLineScan::EnqueueSave(const Pylon::CGrabResultPtr& r, std::uint64_t 
     std::unique_ptr<SaveItem> item(new SaveItem());
     item->result = r;           // ref-count +1, no image copy
     item->index = index;
-    m_p->saveQ.push_unique(std::move(item));
+    m_p->saveQ.push(std::move(item));
 }
 
 // cv::Mat header over the pylon buffer (NO copy)
@@ -424,7 +423,7 @@ bool CBaslerLineScan::WrapMat(const Pylon::CGrabResultPtr& r, cv::Mat& out, Pylo
         else
         {
             const bool mono = Pylon::IsMonoImage(pt);
-            m_p->converter.OutputPixelFormat = mono ? Pylon::PixelType_Mono8 : Pylon::PixelType_BGR8packed;
+            m_p->converter.OutputPixelFormat = Pylon::PixelType_BGR8packed;
             m_p->converter.Convert(tmp, r);
 
             size_t tmpStride = 0;
@@ -456,17 +455,23 @@ void CBaslerLineScan::SaveLoop()
             ::Sleep(5);         // nothing to save -> rest (disk latency does not matter here)
             continue;
         }
-        std::unique_ptr<SaveItem> item = m_p->saveQ.pop_unique();
+        std::unique_ptr<SaveItem> item = m_p->saveQ.wait_pop(100);
         if (item)
+        {
             WriteItem(*item);
+        }
+            
     }
 
     // flush: write everything still queued before exiting
     while (!m_p->saveQ.empty())
     {
-        std::unique_ptr<SaveItem> item = m_p->saveQ.pop_unique();
+        std::unique_ptr<SaveItem> item = m_p->saveQ.wait_pop(100);
         if (item)
+        {
             WriteItem(*item);
+        }
+            
     }
 }
 
@@ -533,6 +538,7 @@ bool CBaslerLineScan::IsOpen() const
 
 bool CBaslerLineScan::IsGrabbing() const
 {
+   
     return m_p->bGrabRun;
 }
 
@@ -548,7 +554,7 @@ std::uint64_t CBaslerLineScan::GetLostCount() const
 
 std::size_t CBaslerLineScan::GetQueueDepth() const
 {
-    return m_p->procQ.get_size();
+    return m_p->procQ.size();
 }
 
 std::uint64_t CBaslerLineScan::GetSavedCount() const
@@ -563,7 +569,7 @@ std::uint64_t CBaslerLineScan::GetSaveDropCount() const
 
 std::size_t CBaslerLineScan::GetSaveQueueDepth() const
 {
-    return m_p->saveQ.get_size();
+    return m_p->saveQ.size();
 }
 
 std::string CBaslerLineScan::GetLastError() const
